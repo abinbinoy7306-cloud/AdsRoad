@@ -50,6 +50,8 @@ The exchange-rate function is public and used by the checkout UI to refresh pric
 
 Production URL: https://www.adsroadindia.com
 
+Github URL: https://abinbinoy7306-cloud.github.io/AdsRoad/
+
 Set the production frontend environment variable:
 
 ```env
