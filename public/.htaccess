@@ -1,0 +1,73 @@
+# AdsRoad — Apache config for Vite SPA (fixes blank/stuck billboards on first load)
+
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Redirect HTTP to HTTPS
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://www.adsroadindia.com/$1 [R=301,L]
+
+  # Redirect non-www to www
+  RewriteCond %{HTTP_HOST} !^www\. [NC]
+  RewriteRule ^(.*)$ https://www.adsroadindia.com/$1 [R=301,L]
+
+  # Preserve Authorization header for any server-side handlers
+  RewriteCond %{HTTP:Authorization} .
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+  # Do NOT rewrite real files or folders (required for /assets/*.js CSS chunks)
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  # SPA fallback — only unknown routes go to index.html
+  RewriteRule ^ index.html [L]
+</IfModule>
+
+# Correct MIME types (wrong types break ES modules → app never boots)
+<IfModule mod_mime.c>
+  AddType application/javascript .js .mjs
+  AddType text/css .css
+  AddType application/json .json .webmanifest
+  AddType image/svg+xml .svg .svgz
+  AddEncoding gzip .svgz
+</IfModule>
+
+<IfModule mod_headers.c>
+  # Allow Supabase (auth, DB, storage) and Razorpay from the browser
+  Header always set Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' 'unsafe-inline' https://checkout.razorpay.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.supabase.in wss://*.supabase.in https://api.razorpay.com https://checkout.razorpay.com https://lumberjack.razorpay.com; frame-src https://api.razorpay.com https://checkout.razorpay.com; worker-src 'self' blob:;"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), usb=(), display-capture=()"
+  Header always set X-Frame-Options "DENY"
+
+  # Always fetch fresh HTML so new builds load (avoids stale JS after deploy)
+  <FilesMatch "^index\.html$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+
+  # Hashed Vite assets are safe to cache long-term
+  <FilesMatch "\.(js|mjs|css|woff2?|png|jpg|jpeg|gif|webp|ico|svg)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+
+  # JSON metadata from same host (if proxied); cross-origin Supabase is unaffected
+  <FilesMatch "\.json$">
+    Header set Cache-Control "public, max-age=300"
+  </FilesMatch>
+</IfModule>
+
+# Compression — faster first paint on slow connections
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/plain text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+<IfModule mod_brotli.c>
+  AddOutputFilterByType BROTLI_COMPRESS text/html text/plain text/css text/javascript application/javascript application/json image/svg+xml
+</IfModule>
+
+# Disable directory listing
+Options -Indexes
