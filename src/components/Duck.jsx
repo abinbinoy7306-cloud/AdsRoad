@@ -1,7 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { scheduleIdleWork } from '../utils/async';
 
-const frames = Array.from({ length: 16 }, (_, i) => `/duck_gif/duck_gif${100 + i}.gif`);
+const frames = Array.from(
+    { length: 16 },
+    (_, i) => `${import.meta.env.BASE_URL}duck_gif/duck_gif${100 + i}.gif`,
+);
 const FRAME_DURATION_MS = 33;
 
 export default React.memo(function Duck({ paused = false }) {
