@@ -1,0 +1,64 @@
+name: Deploy AdsRoad
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_SITE_URL: ${{ secrets.VITE_SITE_URL }}
+          VITE_RAZORPAY_KEY_ID: ${{ secrets.VITE_RAZORPAY_KEY_ID }}
+          VITE_RAZORPAY_AMOUNT_PAISE: ${{ secrets.VITE_RAZORPAY_AMOUNT_PAISE }}
+          VITE_RAZORPAY_CURRENCY: ${{ secrets.VITE_RAZORPAY_CURRENCY }}
+          VITE_RAZORPAY_PLAN_LABEL: ${{ secrets.VITE_RAZORPAY_PLAN_LABEL }}
+          VITE_RAZORPAY_API_MODE: edge
+          VITE_RAZORPAY_CREATE_ORDER_FN: create-razorpay-order
+          VITE_RAZORPAY_VERIFY_PAYMENT_FN: verify-razorpay-payment
+          VITE_RATES_FUNCTION_NAME: get-exchange-rates
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload build
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: ./dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
