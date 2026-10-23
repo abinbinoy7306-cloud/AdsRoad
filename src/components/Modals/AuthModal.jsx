@@ -3,7 +3,6 @@ import { supabase } from '../../services/supabaseClient';
 import {
     clearPasswordRecoveryPending,
     clearStoredAuthRedirectError,
-    getAuthRedirectUrl,
     getPasswordRecoveryRedirectUrl,
     getStoredAuthRedirectError,
     isPasswordRecoveryPending,
@@ -82,9 +81,6 @@ export default function AuthModal({ onClose }) {
                 const res = await supabase.auth.signUp({
                     email,
                     password,
-                    options: {
-                        emailRedirectTo: getAuthRedirectUrl(),
-                    },
                 });
                 error = res.error;
                 sessionActive = !!res.data?.session;
@@ -103,7 +99,7 @@ export default function AuthModal({ onClose }) {
                 : error.message);
         } else {
             if (isSignUp && !sessionActive) {
-                alert('Sign up successful! Please check your email to verify your account.');
+                setErrorMsg('Account created, but no active session was returned. Please check the Supabase Auth email confirmation setting.');
             } else {
                 onClose();
             }
@@ -207,9 +203,6 @@ export default function AuthModal({ onClose }) {
                         Sign Up
                     </button>
                 </div>
-                <p className="login-confirm-hint">
-                    Already signed up or confirmed your email? Click the login button
-                </p>
             </form>
         </>
     );

@@ -1,3 +1,6 @@
+[auth.email]
+enable_confirmations = false
+
 [functions.create-razorpay-order]
 verify_jwt = true
 
